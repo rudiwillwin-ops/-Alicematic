@@ -1,0 +1,8 @@
+{
+  "mode": "execute",
+  "persona_file": "automation/personas/cast_7_diverse_sfw_v4.json",
+  "persona_id": "CAST-004",
+  "providers": "leonardo",
+  "max_scenes": 7,
+  "notes": "No API calls in dry-run."
+}

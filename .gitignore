@@ -1,0 +1,17 @@
+# Ignore sensitive files
+.env
+*.db
+*.log
+*.err
+__pycache__/
+*.ex5
+API keys.txt
+config.py
+Quantum Flux/config.py
+The Tri-Factor/TRI_FACTOR/config.py
+ELite Sniper/config.py
+Shadow. V2/config.py
+The Bull/config.py
+.agent/
+*.lnk
+ReportHistory*.html

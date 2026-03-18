@@ -1,0 +1,7 @@
+﻿MetaTrader5
+pybit
+flask
+pandas
+numpy
+requests
+python-dateutil

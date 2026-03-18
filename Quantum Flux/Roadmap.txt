@@ -1,0 +1,16 @@
+Act as a Python Quant & GUI Developer. Finalize 'Quantum Breakout v1' with a 'Turbo Mode' toggle.
+1. THE INTERFACE (Tkinter):
+Radio Buttons: Add two options: 'Conservative Mode' and 'Aggressive Mode'.
+Default: Set to 'Aggressive' so the user sees immediate action.
+Start Button: Keep the clean 'START' label.
+Status Bar: Show active mode (e.g., 'Turbo Active: Scanning 5 Pairs...').
+2. THE TURBO LOGIC:
+Aggressive Mode: Decrease the Bollinger Band 'Squeeze' requirement by 40%. This allows the bot to trigger on smaller volatility spikes.
+Multi-Pair Expansion: In Aggressive mode, automatically scan EURUSD, GBPUSD, USDZAR, Gold (XAUUSD), and USDJPY.
+3. SAFETY (Non-Negotiable):
+Even in 'Aggressive' mode, the 1% Risk per trade and 3% Daily Loss Kill-Switch must remain active.
+If the spread on any pair is wider than the potential profit, the bot must skip that pair automatically to save on fees.
+4. INFRASTRUCTURE:
+Use threading so the user can switch modes while the bot is running.
+Include BackupProject() to zip files to the /BACKUPS/ folder.
+Provide the production-ready Python code for Quantum_Turbo.py and config.py now."

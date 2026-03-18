@@ -1,0 +1,17 @@
+@echo off
+title Shadow Robot - Master Control
+color 0B
+
+echo [SYSTEM] Activating Shadow Robot...
+echo [STRATEGY] Quiet Volatile & Black Swan
+echo [CONFIG] Trade Cap: 15 | Black Swan Trigger: $15 balance
+
+:: 1. The 5-Minute Market Scan
+echo [SCANNING] Initializing 300-second market scan and news check...
+timeout /t 300 /nobreak
+
+:: 2. Launch the Robot Logic
+:: This runs your robot and passes the rules to the script
+python shadow_robot.py --api_key YOUR_API_KEY --secret YOUR_API_SECRET --cap 15 --swan 15
+
+pause

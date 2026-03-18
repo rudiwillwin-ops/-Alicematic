@@ -1,0 +1,11 @@
+Initializing Shadow...
+
+Shadow Bot Initialization Complete.
+-----------------------------------
+Bybit API Key: Set
+News API Key: Set
+Symbol: BTC/USDT
+Daily Trade Limit: 50
+Risk per Trade: 1.0%
+-----------------------------------
+Press Enter to start the Shadow trading bot...

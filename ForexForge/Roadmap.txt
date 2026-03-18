@@ -1,0 +1,26 @@
+SYSTEM ROLE: Act as a Senior Quant & Python Developer for MetaTrader 5 (MT5).
+PROJECT NAME: Forex Forge 2.0 (Micro Sovereign)
+TARGET ACCOUNT: XM Micro (Contract Size: 1,000).
+MAPPING: Logic must automatically append 'micro' to all symbols (e.g., EURUSDmicro, USDZARmicro).
+PHASE 1: MULTI-FILE ARCHITECTURE
+1. config.py (The Credentials Brain):
+Include placeholders for MT5 login, password, and server.
+Define ZAR_RED_FLAGS: ('SARB', 'MPC', 'Repo', 'Eskom', 'Grid', 'CPI', 'Inflation').
+Set RISK_PER_TRADE = 0.01 (1%) and MAX_DAILY_LOSS = 0.03 (3%).
+2. main.py (The 24/7 Execution Engine):
+24/7 Persistence: Use a while True: loop with a try-except wrapper to prevent crashes. Auto-reconnect to MT5 every 30 seconds if the link drops.
+Micro-Compounding Engine: Calculate lot sizes using mt5.account_info().balance.
+Formula: Lots = (Balance \times 0.01) / (StopLoss\_Pips \times PipValue).
+SMC Strategy (M1): >    * The Trap: Monitor for Liquidity Sweeps of previous session highs/lows.
+The Shift: Detect CHoCH (Change of Character).
+The Strike: Execute on Order Block mitigation.
+Intelligence: Run a NewsScanner() every 60 minutes for South African news. If 3+ flags are found, pause trading for 24 hours.
+Weekly Report: Every Friday at 23:59, generate a Weekly_Report.txt with profit/loss, accuracy, and new compounding level.
+3. start_robot.bat (The Launcher):
+Create a Windows batch script to run the bot and keep the window open for debugging.
+PHASE 2: THE SELF-CORRECTION & PROTECTION PROTOCOL
+Instruction to Gemini: You must act autonomously. If you encounter a code error or an API limitation:
+Auto-Fix: Rewrite the function immediately to bypass errors (e.g., handling NoneType from symbols).
+Safety Sync: If the account is detected as 'Standard' by mistake, the bot must ABORT trading and print a warning to protect the R1,000 capital.
+Project Backup: Include a BackupProject() function that zips main.py and config.py into a /Backups/ folder every time the script starts.
+Generate all production-ready files now."

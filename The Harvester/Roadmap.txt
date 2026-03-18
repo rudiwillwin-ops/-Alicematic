@@ -1,0 +1,25 @@
+ROLE] Act as a Senior Quantitative Developer specializing in the Freqtrade ecosystem. Your objective is to generate the full Python strategy code and the JSON configuration file for a robot named The Harvester.
+[CONTEXT] * User Balance: R1,000 (ZAR).
+Environment: Freqtrade (Dry-run mode for 48 hours first).
+Strategy Goal: 100% Market Neutral Grid Trading.
+[CORE EXECUTION LOGIC]
+100% Maker (Zero Fees): The bot must strictly use limit orders with post_only: true. It must never act as a "Taker." Entry and exit pricing must stay on the respective bid and ask sides of the order book.
+Neutral Grid: Implement a grid that places both buy and sell orders around the current price. It should profit from small price wiggles (volatility) rather than market direction.
+Dynamic Trailing: The grid must "follow" the price. If the price moves out of the current grid range, the bot must cancel far orders and move the grid to stay centered.
+[RISK MANAGEMENT]
+1% Rule: Set stake_amount to "unlimited" but use a tradable_balance_ratio of 0.99 with max_open_trades: 5. Ensure each individual position is approximately 1% of the wallet.
+Volatility Brake: Use ta.ATR. If current volatility is 2x higher than the 14-period average, stop all new entries until the market settles.
+Trend Filter: Use ta.ADX. If ADX > 25 (strong trend), pause grid entries to avoid being "caught" in a one-way move.
+Overextension Filter: Use ta.RSI. Disable "Buy" orders if RSI > 70. Disable "Sell" orders if RSI < 30.
+[TECHNICAL OUTPUTS]
+Strategy File (TheHarvester.py):
+Class Name: TheHarvester.
+Timeframe: 5m.
+Use IStrategy interface.
+Implement populate_indicators, populate_entry_trend, and populate_exit_trend.
+Configuration File (config.json):
+dry_run: true.
+stake_currency: "USDT" (or appropriate base currency).
+dry_run_wallet: 1000.
+order_types dictionary set to limit for all entries/exits.
+[INSTRUCTION] Provide the complete code for both files now in a format that is ready to be saved into the user_data/strategies/ and main directory folders.

@@ -1,0 +1,13 @@
+Reminder: To apply these changes, you will need to:
+   1. Open your MetaTrader 5 terminal.
+   2. In the Navigator window, right-click the QuantumFluxSovereign EA and select Compile (or press F7 in the
+      MetaEditor).
+   3. Ensure the "Algo Trading" button is green.
+
+I'll create a new .bat file for you that will launch MetaTrader 5 with the ATM robot pre-loaded. This means all you
+  have to do is run the script, and the bot will be automatically attached and ready to go!
+
+ How to start it for the first time:
+   1. Close MetaTrader 5 completely.
+   2. Go to your Desktop\robots\ATM folder.
+   3. Double-click the new file I created called: START_ATM_AUTO.bat.

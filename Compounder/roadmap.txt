@@ -1,0 +1,192 @@
+BUILD A FULL PRODUCTION PYTHON TRADING SYSTEM
+
+NAME:
+CORE ENGINE — PROP FIRM MACHINE — VERSION 1 LAUNCH
+
+OBJECTIVE:
+Create a professional automated trading system for small-account compounding that trades Forex via MetaTrader5 and Crypto via Bybit USDT Perpetuals.
+
+ARCHITECTURE:
+Single Python application that includes:
+• Trading Engine
+• Risk Engine
+• Strategy Engine
+• Performance Tracker
+• Mobile Web Dashboard
+• Backtest Analytics
+• News Filter
+• Data Storage
+• Alerts System
+
+==================================================
+TRADING MARKETS
+==================================================
+
+FOREX:
+- MetaTrader5 integration
+- Multiple symbols support
+- Spread filter
+- Slippage protection
+
+CRYPTO:
+- Bybit unified trading API
+- Perpetual futures only
+- Shared risk model with Forex
+
+==================================================
+ENGINE MODES
+==================================================
+
+VERSION 1 — STANDARD PROP FIRM MODE
+• Balanced compounding
+• Full protections active
+
+VERSION 2 — CONTROLLED GROWTH MODE
+• Reduced exposure
+• Drawdown sensitive scaling
+
+VERSION 3 — OPTIMAL AGGRESSION MODE
+• Maximum safe compounding
+• Volatility-based scaling
+
+Mode switching must occur automatically based on drawdown percentage.
+
+==================================================
+ENTRY STRATEGY
+==================================================
+
+Use professional multi-filter logic:
+
+• EMA trend alignment
+• RSI momentum confirmation
+• Pullback entry detection
+• Breakout entry detection
+• Multi-timeframe bias
+• ADX trend strength filter
+• ATR volatility filter
+
+Robot must support both BUY and SELL.
+
+==================================================
+RISK ENGINE
+==================================================
+
+Implement institutional risk control:
+
+• Risk per trade (% of equity)
+• Position sizing based on stop distance
+• Soft drawdown pause
+• Hard drawdown stop
+• Max concurrent trades
+• Trade cooldown timer
+• Reward-to-risk enforcement
+• Session filter
+• News event filter
+
+==================================================
+TRADE MANAGEMENT
+==================================================
+
+• Adaptive ATR trailing stop
+• Volatility scaling
+• Partial profit locking
+• Trade logging
+• Equity tracking
+• Performance tracking
+
+==================================================
+PERFORMANCE SYSTEM
+==================================================
+
+Track and expose:
+
+• Total trades
+• Win rate
+• Profit factor
+• Monthly performance
+• Weekly performance
+• Equity curve
+• Drawdown curve
+• Trade history
+
+==================================================
+DATA STORAGE
+==================================================
+
+Persist locally:
+
+• Trade log
+• Equity history
+• Performance metrics
+• System state recovery
+
+==================================================
+ALERT SYSTEM
+==================================================
+
+Send alerts for:
+
+• Trade opened
+• Trade closed
+• Mode change
+• Drawdown warning
+• System error
+
+==================================================
+MOBILE DASHBOARD
+==================================================
+
+Create Flask web server with endpoints:
+
+/status
+• equity
+• crypto balance
+• mode
+• risk state
+• open trades
+• recent trades
+
+/backtest
+• equity curve data
+• monthly results
+• win rate
+• drawdown
+
+Dashboard must be mobile-friendly for phone browser monitoring on same WiFi network.
+
+==================================================
+SYSTEM LOOP
+==================================================
+
+Continuous execution loop:
+
+1. Update equity
+2. Evaluate drawdown
+3. Select engine mode
+4. Scan Forex symbols
+5. Scan Crypto symbols
+6. Validate filters
+7. Execute trades
+8. Update trailing stops
+9. Log performance
+10. Update dashboard
+
+==================================================
+CODE REQUIREMENTS
+==================================================
+
+• Clean production structure
+• Fully runnable Python script
+• No placeholders
+• Error handling included
+• Threaded dashboard server
+• Clear configuration section
+• Ready for local execution
+
+OUTPUT FORMAT:
+Return ONE complete Python script only.
+No explanations.
+No commentary.
+No extra text.
+
+END BUILD

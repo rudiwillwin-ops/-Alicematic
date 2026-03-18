@@ -1,0 +1,62 @@
+Session Backup - Elite Sniper Centurion Project
+
+This document provides a summary of the actions performed and decisions made during this Gemini CLI session for the "Elite Sniper Centurion" project.
+
+**1. Project Setup and Initial Request:**
+The session started with the user requesting to build a robot called "Elite Sniper". All files were to be stored in the `C:\Users\Client\Desktop\ELite Sniper` folder. The user also provided a `Roadmap.txt` file to be followed.
+
+**2. Roadmap Execution - File Architecture and Content Creation:**
+The `Roadmap.txt` outlined the following steps:
+
+*   **Part 1: File Architecture**
+    *   `config.py`: Created to store MT5 credentials, risk parameters, strategy settings, and alert placeholders.
+    *   `bot_logic.py`: Developed to implement the core trading logic, including trend filtering (200 EMA), signal generation (Donchian Channels), and dynamic position sizing (ATR).
+    *   `main.py`: Created as the main entry point for the bot, handling MT5 login, a placeholder for the News Shield, and a Consistency Guardian for trade management.
+    *   `requirements.txt`: Created to list all Python dependencies (`MetaTrader5`, `pandas`, `pandas-ta`, `numpy`).
+    *   `START_BOT.bat`: A batch script designed to install Python requirements and launch `main.py`.
+
+**3. Specifics of Created Files:**
+
+*   **config.py:**
+    *   `MT5_LOGIN`, `MT5_PASSWORD`, `MT5_SERVER`, `MT5_PATH`
+    *   `RISK_PER_TRADE`, `DAILY_LOSS_LIMIT`
+    *   `SYMBOL`, `TIMEFRAME`, `RR_RATIO`, `MAX_SPREAD`
+    *   `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+*   **bot_logic.py:**
+    *   `TradingEngine` class with methods:
+        *   `get_data()`: Fetches historical data from MT5.
+        *   `calculate_indicators()`: Applies EMA(200), Donchian Channels(20), and ATR(14).
+        *   `check_trade_signal()`: Implements trend-following logic based on EMA and Donchian Channel breakouts.
+        *   `calculate_position_size()`: Dynamically calculates lot size based on account equity, risk per trade, and ATR for stop-loss distance.
+        *   `execute_trade()`: Sends trade orders to MT5 with calculated SL/TP.
+*   **main.py:**
+    *   `MainBot` class with methods:
+        *   `initialize_mt5()`: Connects to the MT5 terminal.
+        *   `is_news_event()`: Placeholder for a news filter (requires external news source).
+        *   `consistency_guardian()`: Monitors open positions, moving Stop Loss to Break Even + 1 pip if profit target is met.
+        *   `run()`: Main bot loop, executing checks, signals, and trade management.
+        *   `get_sleep_time()`: Calculates sleep duration until the next candle.
+*   **requirements.txt:** Lists Python packages required: `MetaTrader5`, `pandas`, `pandas-ta`, `numpy`.
+*   **START_BOT.bat:**
+    *   Sets terminal title.
+    *   Installs dependencies from `requirements.txt`.
+    *   Executes `python main.py`.
+    *   Includes prompts and a `pause` command for user interaction.
+
+**4. Project Backup Implementation:**
+The user requested a backup system for the project.
+
+*   A `backup` folder was created in the project root.
+*   All project files (`config.py`, `bot_logic.py`, `main.py`, `requirements.txt`, `START_BOT.bat`, `Roadmap.txt`) were copied into the `backup` folder.
+*   A `backup_log.txt` file was created within the `backup` folder, containing the timestamp of the backup operation.
+
+**5. Session-Specific Backup of `Backup.txt`:**
+The user requested to backup a specific file named `Backup.txt` at the end of each session.
+
+*   It was clarified that automatic execution at the end of every session is not directly possible within the CLI agent's capabilities.
+*   A manual solution was proposed and accepted: a batch script named `backup_session.bat` was created.
+*   This script generates a timestamp and copies `Backup.txt` into the `backup` folder with a unique, timestamped filename (e.g., `Backup_YYYY-MM-DD_HH-MM-SS.txt`).
+*   The `backup_session.bat` script was executed once to demonstrate its functionality, successfully creating a timestamped backup of `Backup.txt`.
+
+**Conclusion:**
+All requested tasks have been completed. The "Elite Sniper Centurion" trading bot framework is in place, along with a manual backup mechanism for critical session data.

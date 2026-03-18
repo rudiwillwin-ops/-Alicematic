@@ -1,0 +1,103 @@
+# Shadow Trading Bot - Build History
+
+This document chronicles the development of the "Shadow" High-Frequency Trading Bot.
+
+## 1. Initial Project Setup
+
+-   **Date:** Saturday, 24 January 2026
+-   **Action:** Acknowledged persona as High-Frequency Trading Architect and Risk Specialist for "Shadow".
+-   **Outcome:** Confirmed understanding of "Shadow's" core directives and technical DNA.
+-   **Initial State:** Directory was empty.
+
+## 2. Development Plan Proposal
+
+-   **Action:** Proposed a comprehensive development plan to the user for building "Shadow" using Python.
+-   **Plan Overview:**
+    -   **Foundational Setup:** `requirements.txt` (pybit, pandas, requests, playsound, python-dotenv), `config.py`.
+    -   **Core Modules:** `bybit_client.py`, `strategy.py`, `risk_manager.py`, `sentiment_analyzer.py`, `shadow.py` (main logic).
+    -   **Implementation Steps:** Initializing project structure, creating and installing dependencies, implementing each core module, main application logic, sound notification, and README.
+-   **Outcome:** User approved the plan.
+
+## 3. Project File Creation
+
+-   **Action:** Created the following project files with initial placeholder content:
+    -   `requirements.txt`
+    -   `config.py`
+    -   `shadow.py`
+    -   `bybit_client.py`
+    -   `risk_manager.py`
+    -   `strategy.py`
+    -   `sentiment_analyzer.py`
+    -   `README.md`
+    -   `.env` (with blank API key placeholders)
+-   **Content Snippets (initial versions):** (Refer to individual file entries for full initial content)
+
+## 4. Dependency Installation
+
+-   **Action:** Attempted to install dependencies listed in `requirements.txt`.
+-   **Outcome:** `playsound` failed to install with an `OSError`.
+-   **Resolution:** Decided to replace `playsound` with `simpleaudio`.
+    -   Modified `requirements.txt`: `playsound` -> `simpleaudio`.
+    -   Modified `config.py`: Updated comment for `SUCCESS_SOUND` to reflect `.wav` extension for `simpleaudio`.
+    -   Successfully installed all dependencies, including `simpleaudio`.
+
+## 5. `bybit_client.py` Implementation
+
+-   **Action:** Modified `bybit_client.py` to parse API responses and handle order placement.
+-   **Changes Made:**
+    -   **`get_wallet_balance`:** Implemented logic to extract `walletBalance` for USDT from the API response.
+    -   **`place_limit_order`:** Implemented success/failure check based on `retCode` and printed order ID on success.
+    -   **`get_klines`:** Implemented logic to return the list of klines directly from the API response.
+
+## 6. `strategy.py` Implementation
+
+-   **Action:** Modified `strategy.py` to correctly process kline data.
+-   **Changes Made:**
+    -   **`get_ema`:** Adjusted the method to directly use the list of klines returned by `bybit_client.py` (i.e., removed `['result']['list']` access).
+
+## 7. `risk_manager.py` Implementation
+
+-   **Action:** Modified `risk_manager.py` to incorporate risk management directives.
+-   **Changes Made:**
+    -   **`__init__`:** Modified to accept `safety_freeze_limit` and `stop_loss_percent` as parameters.
+    -   **`calculate_sl_tp`:** Updated to use the internal `self.stop_loss_percent` instead of an argument.
+    -   **`check_safety_freeze`:** Added a new method to implement the Black Swan safety freeze, triggered if the balance falls below `$15`.
+-   **Associated `config.py` Change:**
+    -   Added `SAFETY_FREEZE_LIMIT = 15` to `config.py`.
+
+## 8. `sentiment_analyzer.py` Review
+
+-   **Action:** Reviewed `sentiment_analyzer.py`.
+-   **Outcome:** The initial implementation was deemed sufficient for basic keyword scanning (`newsapi.org`). No modifications were made at this stage.
+
+## 9. `shadow.py` Implementation (Main Application Logic)
+
+-   **Action:** Implemented the core logic and trading loop within `shadow.py`.
+-   **Changes Made:**
+    -   **Imports & Initialization:** Added `config`, `simpleaudio`, `dotenv` imports, and initialized `BybitClient`, `Strategy`, `RiskManager`, `SentimentAnalyzer` instances using values from `config.py`.
+    -   **`play_sound` function:** Defined a helper function `play_sound(filename)` to handle audio playback using `simpleaudio`.
+    -   **Main Trading Loop:** Implemented the `while True` loop including:
+        -   Sentiment Guard check.
+        -   Wallet balance retrieval and Black Swan safety freeze check.
+        -   Daily Trade Cap check.
+        -   Kline data retrieval.
+        -   EMA calculation and trade direction determination.
+        -   Position size, Stop Loss, and Take Profit calculation.
+        -   Placeholder for quantity calculation (fixed to `0.001` for demonstration, with a note for future dynamic calculation).
+        -   Order placement via `bybit_client.place_limit_order`.
+        -   Incrementing trade count on successful orders.
+        -   Calling `play_sound(config.SUCCESS_SOUND)` on successful order placement.
+        -   Time delays (`time.sleep`) for various states.
+    -   **Bug Fix:** Removed a duplicate "Executing Pre-Scan Protocol (5 minutes)..." print statement.
+
+## 10. `README.md` Update
+
+-   **Action:** Corrected an outdated reference in `README.md`.
+-   **Changes Made:**
+    -   Updated the optional sound file reference from `ping.mp3` to `ping.wav`.
+
+## 11. Final State
+
+-   All planned development tasks are completed.
+-   The "Shadow" trading bot is ready for configuration and execution.
+-   Instructions provided to the user on setting up `.env` and running `shadow.py`.

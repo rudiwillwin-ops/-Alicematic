@@ -1,0 +1,22 @@
+Act as a Senior Algorithmic Developer specialized in MetaTrader 5 (MT5) and Python. Build a professional-grade trading system named 'Elite Sniper Centurion' designed specifically to pass a $10,000 Prop Firm Challenge.
+Part 1: File Architecture
+Generate three Python files (config.py, bot_logic.py, main.py) and one Windows Batch file (START_BOT.bat).
+Part 2: Specifications (config.py)
+Include the following variables:
+Credentials: MT5_LOGIN, MT5_PASSWORD, MT5_SERVER, MT5_PATH (default to standard terminal64.exe path).
+Risk: RISK_PER_TRADE = 0.005 (0.5%), DAILY_LOSS_LIMIT = 0.04 (4% circuit breaker).
+Strategy: SYMBOL = 'EURUSD', TIMEFRAME = M15, RR_RATIO = 2.0, MAX_SPREAD = 1.5 pips.
+Alerts: Include placeholders for TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.
+Part 3: Trading Engine (bot_logic.py)
+Use pandas_ta to implement a Trend-Following Sniper logic.
+Filters: Only Buy if price is above 200 EMA; only Sell if below.
+Trigger: Use 20-period Donchian Channels. Signal a trade only on a candle close that breaks the upper/lower channel boundary.
+Position Sizing: Calculate Lot Size dynamically using ATR (14) to set a Stop Loss at 2x ATR, ensuring the cash risk remains exactly 0.5% of equity.
+Part 4: Automation & Safety (main.py)
+Auto-Login: Use mt5.initialize() with path and credentials.
+News Shield: Implement a timer that prevents new trades 30 minutes before and after Red Folder events.
+Consistency Guardian: If a single trade's profit reaches 30% of the daily target, move its Stop Loss to 'Break Even' + 1 pip.
+Execution: Ensure all orders are sent as TRADE_ACTION_DEAL with a Hard Stop Loss and Take Profit attached.
+Part 5: The Launcher (START_BOT.bat)
+Write a batch script that opens a terminal window, checks for Python requirements, and executes python main.py so the user can start the bot with one click.
+Output: Provide the complete, clean code for all four files."

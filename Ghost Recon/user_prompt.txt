@@ -1,0 +1,1 @@
+Please provide your VALR API Key and API Secret. I will then update `main_bot.py` with these credentials.

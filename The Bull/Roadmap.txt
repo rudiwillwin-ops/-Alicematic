@@ -1,0 +1,23 @@
+he Bull: AI Construction Prompt
+​Copy and paste everything below into your AI assistant:
+
+​Role: Act as a Senior Python Developer and Quantitative Trader specializing in the CCXT library and cryptocurrency markets.
+
+​Task: Generate a standalone Python script named the_bull.py that implements a high-frequency Neutral Grid Trading Bot.
+
+​Core Logic Requirements:
+
+​100% Maker (Post-Only): Every order must be a Limit Order with postOnly: true enabled in the CCXT parameters. The bot must never execute a "Taker" trade.
+​Neutral Grid: Place 5 Buy Limit orders below the current price and 5 Sell Limit orders above the current price (0.5% spacing).
+​Risk Filters (Technical Analysis):
+​Volatility Brake: Use pandas_ta to calculate ATR (14). If the current ATR is 2x higher than its 14-period average, pause all new entries.
+​Trend Filter: Use ADX (14). If ADX is > 25, pause the grid (only run in sideways/ranging markets).
+​Overextension: Use RSI (14). Stop "Buys" if RSI > 70. Stop "Sells" if RSI < 30.
+​Self-Healing: Every 5 minutes, the bot should cancel all unfilled orders and re-center the grid around the current price.
+​Technical Specs:
+
+​Use CCXT for exchange connectivity (Target: Binance).
+​Use Pandas and Pandas-TA for calculations.
+​Include a DRY_RUN = True toggle at the top so I can test without real money.
+​Ensure the script is a single .py file that can run in a standard terminal.
+​Output: Provide the complete, clean code ready to be saved and executed.

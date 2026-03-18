@@ -1,0 +1,97 @@
+import sys, subprocess, os, time, winsound, requests, json
+
+# ==========================================
+# --- SELF-INSTALLATION GUARD ---
+# ==========================================
+def install_dependencies():
+    required = {"pybit", "requests"}
+    for lib in required:
+        try:
+            __import__(lib)
+        except ImportError:
+            print(f"[SHADOW] Installing missing library: {lib}...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
+            print(f"[SHADOW] {lib} installed successfully.")
+
+install_dependencies()
+from pybit.unified_trading import HTTP
+
+# ==========================================
+# --- SHADOW CORE CONFIGURATION ---
+# ==========================================
+SYMBOL = "BTCUSDT"
+DAILY_TRADE_CAP = 50
+EMA_PERIOD = 20
+RISK_PCT = 0.01        # 1% Account Risk per trade
+RR_RATIO = 2.0         # 1:2 Risk-to-Reward (1 Win = 2 Losses covered)
+USE_DEMO = True        # True for Demo / False for Real $30 Account
+BLACK_SWAN_LIMIT = 15.0 # Stop trading if balance drops below $15
+
+stats = {"trades_today": 0, "start_bal": 0.0}
+
+# ==========================================
+# 1. AUTHENTICATION & LINKING
+# ==========================================
+def link_shadow():
+    config_file = "shadow_auth.json"
+    if not os.path.exists(config_file):
+        print(f"\n--- LINKING SHADOW TO {'DEMO' if USE_DEMO else 'LIVE'} ---")
+        api = input("Paste your Bybit API Key: ")
+        secret = input("Paste your Bybit API Secret: ")
+        with open(config_file, "w") as f:
+            json.dump({"key": api, "secret": secret}, f)
+    
+    with open(config_file, "r") as f:
+        creds = json.load(f)
+    
+    return HTTP(testnet=False, demo=USE_DEMO, api_key=creds['key'], api_secret=creds['secret'])
+
+# ==========================================
+# 2. THE AUDIT-BEFORE-TRADE EXECUTION
+# ==========================================
+def execute_trade(session, direction, entry_price):
+    try:
+        # Audit Live Balance (Winning or Losing)
+        wallet = session.get_wallet_balance(accountType="UNIFIED")
+        current_bal = float(wallet['result']['list'][0]['totalEquity'])
+        
+        if current_bal < BLACK_SWAN_LIMIT:
+            print("!!! BLACK SWAN PROTECTION ACTIVE: Balance below $15 !!!")
+            return False
+
+        # Calculate 1% Risk & 1:2 RR Levels
+        dollar_risk = current_bal * RISK_PCT
+        sl_dist = entry_price * 0.015 # 1.5% SL
+        tp_dist = sl_dist * RR_RATIO  # 3.0% TP
+        
+        sl_price = entry_price - sl_dist if direction == "Buy" else entry_price + sl_dist
+        tp_price = entry_price + tp_dist if direction == "Buy" else entry_price - tp_dist
+        
+        # Calculate Qty to ensure we only lose exactly 1%
+        qty = round(dollar_risk / sl_dist, 5)
+
+        session.place_order(
+            category="linear", symbol=SYMBOL, side=direction,
+            orderType="Limit", qty=str(qty), price=str(entry_price),
+            timeInForce="PostOnly", slTriggerBy="MarkPrice",
+            stopLoss=str(round(sl_price, 2)), takeProfit=str(round(tp_price, 2))
+        )
+        winsound.MessageBeep(winsound.MB_ICONEXCLAMATION) # LOUD PING
+        return True
+    except Exception as e:
+        print(f"Shadow Execution Error: {e}")
+        return False
+
+# ==========================================
+# 3. MASTER CONTROL LOOP
+# ==========================================
+def start_shadow():
+    session = link_shadow()
+    print("\n[SYSTEM] START BUTTON PRESSED. INITIATING 5-MINUTE SCAN...")
+    time.sleep(300) 
+    
+    while stats["trades_today"] < DAILY_TRADE_CAP:
+        # Trend Logic (EMA 20)
+        resp = session.get_kline(category="linear", symbol=SYMBOL, interval="1", limit=EMA_PERIOD+1)
+        closes = [float(k[4]) for k in resp['result']['list']][::-1]
+        price =

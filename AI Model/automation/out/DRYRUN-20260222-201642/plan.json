@@ -1,0 +1,8 @@
+{
+  "mode": "dry-run",
+  "persona_file": "automation/personas/cast_7_diverse_v1.json",
+  "persona_id": "CAST-001",
+  "providers": "",
+  "max_scenes": 0,
+  "notes": "No API calls in dry-run."
+}

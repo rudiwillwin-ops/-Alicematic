@@ -1,0 +1,22 @@
+# Core
+ccxt
+pandas
+numpy
+pandas-ta
+
+# Machine Learning & Stats
+scikit-learn
+scipy
+
+# System & Utils
+python-dotenv
+loguru
+pydantic
+pydantic-settings # Added for Pydantic V2 support
+aiohttp
+
+# Visualization
+matplotlib
+
+# AI
+google-generativeai

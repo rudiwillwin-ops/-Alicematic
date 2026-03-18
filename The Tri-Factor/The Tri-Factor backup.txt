@@ -1,0 +1,131 @@
+import flet as ft
+
+def main(page: ft.Page):
+    # App-wide Configuration
+    page.title = "The Tri-Factor"
+    page.theme_mode = ft.ThemeMode.DARK
+    page.bgcolor = "#121212"  # Deep dark background
+    page.window_width = 390
+    page.window_height = 844
+    page.padding = 30
+
+    # 1. ACCOUNT SELECTION VIEW (The Right Screen)
+    def show_account_options(strategy_name):
+        page.views.append(
+            ft.View(
+                f"/{strategy_name}",
+                [
+                    ft.AppBar(
+                        leading=ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: page.views.pop() or page.update()),
+                        bgcolor=ft.colors.TRANSPARENT,
+                    ),
+                    ft.Container(height=20),
+                    ft.Text(f"Strategy: {strategy_name}", size=20, color=ft.colors.BLUE_400),
+                    ft.Container(height=10),
+                    # Live Account Button (Green)
+                    ft.ElevatedButton(
+                        content=ft.Row([
+                            ft.Icon(ft.icons.MONETIZATION_ON, color="white"),
+                            ft.Text("Live Account (1:3 RR)", size=18, color="white")
+                        ], alignment=ft.MainAxisAlignment.START),
+                        bgcolor="#66BB6A",  # Your specific green
+                        height=65, width=400,
+                        on_click=lambda _: fingerprint_gateway()
+                    ),
+                    ft.Container(height=10),
+                    # Demo Account Button (Blue)
+                    ft.ElevatedButton(
+                        content=ft.Row([
+                            ft.Icon(ft.icons.PLAY_ARROW, color="white"),
+                            ft.Text("Demo Account", size=18, color="white")
+                        ], alignment=ft.MainAxisAlignment.START),
+                        bgcolor="#42A5F5",  # Your specific blue
+                        height=65, width=400,
+                    ),
+                    ft.Container(height=10),
+                    # Backtest Button (Grey)
+                    ft.ElevatedButton(
+                        content=ft.Row([
+                            ft.Icon(ft.icons.ACCESS_TIME_FILLED, color="white"),
+                            ft.Text("Run Backtest", size=18, color="white")
+                        ], alignment=ft.MainAxisAlignment.START),
+                        bgcolor="#424242",  # Dark grey
+                        height=65, width=400,
+                    ),
+                    ft.Container(expand=True),
+                    ft.TextButton("Back to Strategies", on_click=lambda _: page.views.pop() or page.update())
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                padding=25
+            )
+        )
+        page.update()
+
+    # 2. MAIN STRATEGY VIEW (The Left Screen)
+    def build_main_view():
+        return ft.View(
+            "/",
+            [
+                ft.Column([
+                    ft.Text("THE TRI-FACTOR", size=32, weight="bold", color="white"),
+                    ft.Text("Select Market Strategy", size=18, color="grey"),
+                    ft.Container(height=30),
+                    # Factor Quiet (Cyan)
+                    strategy_button("Factor (Quiet)", ft.icons.WAVES, "#26A69A", "Factor Quiet"),
+                    # Factor Volatile (Orange)
+                    strategy_button("Factor (Volatile)", ft.icons.BOLT, "#FB8C00", "Factor Volatile"),
+                    # Factor Black Swan (Red)
+                    strategy_button("Factor (Black Swan)", ft.icons.SHIELD, "#B71C1C", "Factor Black Swan"),
+                    ft.Container(height=50),
+                    # Fingerprint Secure Label
+                    ft.Container(
+                        content=ft.Row([
+                            ft.Icon(ft.icons.LOCK_OUTLINE, size=20),
+                            ft.Text("Fingerprint Secure", size=16)
+                        ], alignment=ft.MainAxisAlignment.CENTER),
+                        border=ft.border.all(1, ft.colors.GREY_800),
+                        border_radius=30,
+                        padding=15,
+                        width=250
+                    )
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+            ],
+            padding=30
+        )
+
+    # Helper function for Strategy Buttons
+    def strategy_button(text, icon, color, strategy_id):
+        return ft.Container(
+            content=ft.ElevatedButton(
+                content=ft.Row([
+                    ft.Icon(icon, size=30, color="white"),
+                    ft.Column([
+                        ft.Text(text.split("(")[0].strip(), size=22, weight="bold", color="white"),
+                        ft.Text(f"({text.split('(')[1]}", size=14, color="white"),
+                    ], spacing=0)
+                ], alignment=ft.MainAxisAlignment.START),
+                bgcolor=color,
+                height=90,
+                width=400,
+                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8)),
+                on_click=lambda _: show_account_options(strategy_id)
+            ),
+            margin=ft.margin.only(bottom=15)
+        )
+
+    # 3. FINGERPRINT GATEWAY LOGIC
+    def fingerprint_gateway():
+        # In a real mobile app, this triggers the OS biometric prompt
+        page.snack_bar = ft.SnackBar(ft.Text("Authenticating Fingerprint..."), open=True)
+        page.update()
+
+    # Initial Page Setup
+    def route_change(route):
+        page.views.clear()
+        page.views.append(build_main_view())
+        page.update()
+
+    page.on_route_change = route_change
+    page.go(page.route)
+
+ft.app(target=main)

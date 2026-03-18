@@ -1,0 +1,4 @@
+MetaTrader5
+pandas
+-e git+https://github.com/twopirllc/pandas-ta.git#egg=pandas-ta
+numpy

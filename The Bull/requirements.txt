@@ -1,0 +1,4 @@
+ccxt==4.5.33
+pandas==2.3.3
+pandas-ta-classic
+python-dotenv==1.2.1

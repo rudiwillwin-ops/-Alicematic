@@ -1,0 +1,16 @@
+{
+    "symbols": ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD", "NZDUSD", "EURJPY", "GBPJPY"],
+    "timeframe": "TIMEFRAME_M5",
+    "lot_size": 0.10,
+    "magic_number": 12345,
+    "check_interval_seconds": 30,
+    "rsi_buy": 30,
+    "rsi_sell": 70,
+    "ema_fast": 12,
+    "ema_slow": 48,
+    "min_bars": 100,
+    "take_profit_percent": 1.0,
+    "stop_loss_percent": 0.5,
+    "telegram_bot_token": "8502474024:AAEh4Fx8n4BHYpTkhIrIMp8aRokCu94gzi4",
+    "telegram_chat_id": "6147376310"
+}
