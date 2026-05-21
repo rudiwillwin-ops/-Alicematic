@@ -1,0 +1,4 @@
+streamlit
+pandas
+tradingview-ta
+metaapi-cloud-sdk
