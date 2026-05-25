@@ -144,9 +144,13 @@ async def execute_gorilla_trade(token, account_id, symbol, direction, risk_pct):
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3233/3233515.png", width=100)
 st.sidebar.title("Gorilla Command")
 
-# Auto-filling credentials to match Samantha's "connected" state
-default_token = "0357f707f15e8b4e76a6e5b4f4f4e5b4" # Derived from your cloud bridge
-default_account = "309567916"
+# Auto-filling credentials from secrets if available
+try:
+    default_token = st.secrets.get("META_TOKEN", "0357f707f15e8b4e76a6e5b4f4f4e5b4")
+    default_account = st.secrets.get("META_ACCOUNT_ID", "309567916")
+except:
+    default_token = "0357f707f15e8b4e76a6e5b4f4f4e5b4"
+    default_account = "309567916"
 
 meta_token = st.sidebar.text_input("MetaApi Token", value=default_token, type="password", key="gorilla_token")
 meta_account_id = st.sidebar.text_input("MetaApi Account ID", value=default_account, key="gorilla_acc")

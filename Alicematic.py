@@ -164,8 +164,12 @@ st.sidebar.title("Alicematic Control")
 
 with st.sidebar.expander("🔑 CLOUD BRIDGE (MetaApi)", expanded=True):
     # Try to load from secrets first for cloud deployment convenience
-    default_token = st.secrets.get("META_TOKEN", "YOUR_TOKEN")
-    default_account = st.secrets.get("META_ACCOUNT_ID", "YOUR_ACCOUNT_ID")
+    try:
+        default_token = st.secrets.get("META_TOKEN", "YOUR_TOKEN")
+        default_account = st.secrets.get("META_ACCOUNT_ID", "YOUR_ACCOUNT_ID")
+    except:
+        default_token = "YOUR_TOKEN"
+        default_account = "YOUR_ACCOUNT_ID"
     
     meta_token = st.text_input("API Token", value=default_token, type="password")
     meta_account_id = st.text_input("Account ID", value=default_account)
