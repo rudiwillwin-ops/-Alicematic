@@ -10,7 +10,7 @@ import threading
 import logging
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 
 import requests
@@ -18,6 +18,10 @@ import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, Response
 import winsound
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 try:
     import MetaTrader5 as mt5
@@ -29,7 +33,7 @@ try:
 except Exception as exc:
     raise ImportError("pybit package is required") from exc
 
-APP_NAME = "CORE ENGINE PROP FIRM MACHINE V1 LAUNCH"
+APP_NAME = "PROP FIRM MACHINE V1"
 
 CONFIG = {
     "loop_interval_seconds": 10,
@@ -84,6 +88,7 @@ CONFIG = {
     "trade_management": {
         "stop_atr": 2.0,
         "trail_atr": 1.5,
+        "tp_atr": 4.0,
         "partial_rr": 1.5,
         "partial_close_pct": 0.5
     },
@@ -101,7 +106,7 @@ CONFIG = {
     },
     "dashboard": {
         "host": "0.0.0.0",
-        "port": 5000
+        "port": 5001
     }
 }
 
@@ -208,7 +213,7 @@ class Storage:
             con.commit()
 
     def save_equity(self, equity: float, drawdown: float) -> None:
-        ts = datetime.utcnow().isoformat()
+        ts = datetime.now(timezone.utc).isoformat()
         with sqlite3.connect(self.db_path) as con:
             cur = con.cursor()
             cur.execute(
@@ -269,7 +274,7 @@ class Storage:
             cur = con.cursor()
             cur.execute(
                 "INSERT INTO alerts (ts, level, message) VALUES (?, ?, ?)",
-                (datetime.utcnow().isoformat(), level, message)
+                (datetime.now(timezone.utc).isoformat(), level, message)
             )
             con.commit()
 
@@ -352,7 +357,7 @@ class NewsFilter:
     def is_blocked(self, symbol: str) -> bool:
         if not self.cfg.get("enabled") or not self.events:
             return False
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         window = timedelta(minutes=self.cfg["window_minutes"])
         currencies = [symbol[:3], symbol[3:]] if len(symbol) == 6 else []
         for e in self.events:
@@ -459,12 +464,12 @@ class Alerts:
     def send(self, level: str, message: str) -> None:
         logging.log(getattr(logging, level, logging.INFO), message)
         self.storage.save_alert(level, message)
-        self.queue.put({"ts": datetime.utcnow().isoformat(), "level": level, "message": message})
+        self.queue.put({"ts": datetime.now(timezone.utc).isoformat(), "level": level, "message": message})
         if self.webhook:
             try:
                 requests.post(
                     self.webhook,
-                    json={"level": level, "message": message, "ts": datetime.utcnow().isoformat()},
+                    json={"level": level, "message": message, "ts": datetime.now(timezone.utc).isoformat()},
                     timeout=5
                 )
             except Exception:
@@ -484,13 +489,26 @@ class ForexBroker:
         self.alerts = alerts
 
     def connect(self, login: Optional[int], password: Optional[str], server: Optional[str]) -> None:
-        path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
+        path = os.getenv("MT5_PATH", "C:\\Program Files\\MetaTrader 5\\terminal64.exe")
+        self.alerts.send("INFO", f"Initializing MT5 at {path}...")
+        
+        if not mt5.initialize(path=path):
+            err = mt5.last_error()
+            self.alerts.send("ERROR", f"MT5 initialize failed: {err}")
+            # Try without explicit path as fallback
+            if not mt5.initialize():
+                raise RuntimeError(f"MT5 initialize failed (default path): {mt5.last_error()}")
+        
         if login and password and server:
-            ok = mt5.initialize(path=path, login=login, password=password, server=server)
+            self.alerts.send("INFO", f"Logging into MT5 Account {login} on {server}...")
+            authorized = mt5.login(login=login, password=password, server=server)
+            if not authorized:
+                err = mt5.last_error()
+                self.alerts.send("ERROR", f"MT5 login failed: {err}")
+                raise RuntimeError(f"MT5 login failed for account {login}: {err}")
+            self.alerts.send("INFO", "MT5 Login Successful")
         else:
-            ok = mt5.initialize(path=path)
-        if not ok:
-            raise RuntimeError(f"MetaTrader5 initialize failed: {mt5.last_error()}")
+            self.alerts.send("INFO", "Using current MT5 terminal account (no credentials provided)")
 
     def ensure_symbol(self, symbol: str) -> None:
         info = mt5.symbol_info(symbol)
@@ -523,6 +541,19 @@ class ForexBroker:
 
     def place_order(self, symbol: str, side: str, volume: float, price: float, sl: float, tp: float):
         order_type = mt5.ORDER_TYPE_BUY if side == "BUY" else mt5.ORDER_TYPE_SELL
+        
+        # Determine filling mode
+        info = mt5.symbol_info(symbol)
+        filling = mt5.ORDER_FILLING_IOC # Default to IOC
+        if info:
+            # Using numeric values for flags as some MT5 versions miss the SYMBOL_FILLING constants
+            if info.filling_mode & 1: # SYMBOL_FILLING_FOK
+                filling = mt5.ORDER_FILLING_FOK
+            elif info.filling_mode & 2: # SYMBOL_FILLING_IOC
+                filling = mt5.ORDER_FILLING_IOC
+            else:
+                filling = mt5.ORDER_FILLING_RETURN
+
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
@@ -533,11 +564,20 @@ class ForexBroker:
             "tp": tp,
             "deviation": self.cfg["forex"]["slippage_points"],
             "magic": self.cfg["magic_number"],
-            "comment": self.cfg["comment"]
+            "comment": self.cfg["comment"],
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": filling,
         }
+        
+        self.alerts.send("INFO", f"Sending {side} order for {symbol}: {volume} lots at {price}")
         result = mt5.order_send(request)
-        if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
-            raise RuntimeError(f"MT5 order failed {result}")
+        if result is None:
+            err = mt5.last_error()
+            raise RuntimeError(f"MT5 order_send returned None. Error: {err}")
+            
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            raise RuntimeError(f"MT5 order failed. Retcode: {result.retcode}, Comment: {result.comment}")
+            
         return result
 
     def modify_sl(self, symbol: str, ticket: int, new_sl: float):
@@ -578,8 +618,8 @@ class ForexBroker:
         return mt5.positions_get()
 
     def history_deals(self, from_days: int = 2):
-        utc_from = datetime.utcnow() - timedelta(days=from_days)
-        utc_to = datetime.utcnow()
+        utc_from = datetime.now(timezone.utc) - timedelta(days=from_days)
+        utc_to = datetime.now(timezone.utc)
         return mt5.history_deals_get(utc_from, utc_to)
 
 class BybitBroker:
@@ -593,10 +633,15 @@ class BybitBroker:
         self._instrument_cache = {}
 
     def account_balance(self) -> float:
-        resp = self.session.get_wallet_balance(accountType="UNIFIED", coin="USDT")
-        if "result" not in resp or "list" not in resp["result"]:
-            raise RuntimeError("Bybit balance failed")
-        return float(resp["result"]["list"][0]["coin"][0]["walletBalance"])
+        try:
+            resp = self.session.get_wallet_balance(accountType="UNIFIED", coin="USDT")
+            if "result" not in resp or "list" not in resp["result"]:
+                raise RuntimeError(f"Bybit balance failed: {resp}")
+            return float(resp["result"]["list"][0]["coin"][0]["walletBalance"])
+        except Exception as e:
+            if "401" in str(e):
+                raise RuntimeError(f"Bybit 401 Unauthorized: Check your API Key and Secret. {e}")
+            raise RuntimeError(f"Bybit balance error: {e}")
 
     def get_kline(self, symbol: str, interval: str, limit: int = 300) -> pd.DataFrame:
         resp = self.session.get_kline(
@@ -770,8 +815,8 @@ class TradingEngine:
         self.strategy = StrategyEngine(CONFIG)
         self.performance = PerformanceTracker(self.storage)
         self.backtester = Backtester(CONFIG, self.strategy)
-        self.forex = ForexBroker(CONFIG, self.alerts)
-        self.bybit = BybitBroker(CONFIG)
+        self.forex: Optional[ForexBroker] = None
+        self.bybit: Optional[BybitBroker] = None
         self.open_trades: Dict[str, Trade] = {}
         self.last_trade_time: Optional[float] = None
         self.equity_high: float = 0.0
@@ -796,45 +841,85 @@ class TradingEngine:
                     parts = s.split()
                     if parts:
                         data["MT5_PASSWORD"] = parts[-1]
-                if l.startswith("server"):
+                if l.startswith("server") or l.startswith("mt5 server"):
                     parts = s.split(maxsplit=1)
                     if len(parts) == 2:
                         data["MT5_SERVER"] = parts[1]
-                if l.startswith("api key"):
+                if l.startswith("api key") or l.startswith("bybit api key"):
                     parts = s.split()
                     if len(parts) >= 3:
                         data["BYBIT_API_KEY"] = parts[-1]
-                if l.startswith("api secret"):
+                if l.startswith("api secret") or l.startswith("bybit api secret"):
                     parts = s.split()
                     if len(parts) >= 3:
                         data["BYBIT_API_SECRET"] = parts[-1]
         return data
 
     def _load_credentials(self) -> None:
-        api_file = os.path.join(os.getcwd(), "API keys.txt")
-        creds = self._load_api_keys_txt(api_file)
-        for k, v in creds.items():
-            if not os.getenv(k):
-                os.environ[k] = v
+        # Search in CWD and script directory
+        search_paths = [
+            os.path.join(os.getcwd(), "API keys.txt"),
+            os.path.join(os.path.dirname(__file__), "API keys.txt")
+        ]
+        found_any = False
+        for api_file in search_paths:
+            if os.path.exists(api_file):
+                self.alerts.send("INFO", f"Loading credentials from {api_file}...")
+                creds = self._load_api_keys_txt(api_file)
+                for k, v in creds.items():
+                    if not os.getenv(k):
+                        os.environ[k] = v
+                found_any = True
+                self.alerts.send("INFO", f"Successfully loaded credentials from {api_file}")
+        
+        if not found_any:
+            self.alerts.send("WARNING", "No 'API keys.txt' found in CWD or script directory.")
 
     def init(self) -> None:
+        self.alerts.send("INFO", "Initializing Trading Engine...")
         self._load_credentials()
-        login = os.getenv("MT5_LOGIN")
-        password = os.getenv("MT5_PASSWORD")
-        server = os.getenv("MT5_SERVER")
-        login_i = int(login) if login and login.isdigit() else None
+        
+        # Initialize Forex if enabled
         if CONFIG["forex"]["enabled"]:
-            self.forex.connect(login_i, password, server)
-            for sym in CONFIG["forex"]["symbols"]:
-                self.forex.ensure_symbol(sym)
+            self.alerts.send("INFO", "Forex module enabled. Connecting to MT5...")
+            self.forex = ForexBroker(CONFIG, self.alerts)
+            login = os.getenv("MT5_LOGIN")
+            password = os.getenv("MT5_PASSWORD")
+            server = os.getenv("MT5_SERVER")
+            login_i = int(login) if login and login.isdigit() else None
+            
+            try:
+                self.forex.connect(login_i, password, server)
+                for sym in CONFIG["forex"]["symbols"]:
+                    self.forex.ensure_symbol(sym)
+            except Exception as e:
+                self.alerts.send("ERROR", f"Forex initialization failed: {e}")
+                CONFIG["forex"]["enabled"] = False # Disable if failed
+        
+        # Initialize Bybit if enabled
+        if CONFIG["crypto"]["enabled"]:
+            self.alerts.send("INFO", "Crypto module enabled. Connecting to Bybit...")
+            try:
+                self.bybit = BybitBroker(CONFIG)
+                # Test connection
+                self.bybit.account_balance()
+                self.alerts.send("INFO", "Bybit connection successful")
+            except Exception as e:
+                self.alerts.send("ERROR", f"Crypto initialization failed: {e}. Disabling crypto module.")
+                CONFIG["crypto"]["enabled"] = False
+                self.bybit = None
+
         self.open_trades = {t.trade_id: t for t in self.storage.load_open_trades()}
-        eq = self.storage.get_state("equity_high")
-        self.equity_high = float(eq) if eq else 0.0
+        self.alerts.send("INFO", f"Loaded {len(self.open_trades)} open trades from storage.")
+        
+        eq_high = self.storage.get_state("equity_high")
+        self.equity_high = float(eq_high) if eq_high else 0.0
+        
         self.initialized = True
-        self.alerts.send("INFO", "Engine initialized")
+        self.alerts.send("INFO", "Engine successfully initialized and ready.")
 
     def _session_ok(self, market: str) -> bool:
-        now_utc = datetime.utcnow()
+        now_utc = datetime.now(timezone.utc)
         cfg = CONFIG["session_filter"]["forex"] if market == "FOREX" else CONFIG["session_filter"]["crypto"]
         return cfg["start_hour_utc"] <= now_utc.hour < cfg["end_hour_utc"]
 
@@ -878,7 +963,7 @@ class TradingEngine:
         return float(volume)
 
     def _calc_crypto_qty(self, symbol: str, stop_distance: float, equity: float, atr_series: pd.Series) -> float:
-        if stop_distance <= 0:
+        if stop_distance <= 0 or not self.bybit:
             return 0.0
         risk_amt = equity * self.risk_engine.risk_per_trade()
         risk_amt *= self._volatility_scale(atr_series)
@@ -899,15 +984,25 @@ class TradingEngine:
 
     def update_equity(self) -> Tuple[float, float]:
         equity = 0.0
-        if CONFIG["forex"]["enabled"]:
-            equity += self.forex.account_info().equity
-        if CONFIG["crypto"]["enabled"]:
-            equity += self.bybit.account_balance()
+        if CONFIG["forex"]["enabled"] and self.forex:
+            try:
+                equity += self.forex.account_info().equity
+            except Exception as e:
+                self.alerts.send("ERROR", f"Failed to get MT5 equity: {e}")
+        
+        if CONFIG["crypto"]["enabled"] and self.bybit:
+            try:
+                equity += self.bybit.account_balance()
+            except Exception as e:
+                self.alerts.send("ERROR", f"Failed to get Bybit balance: {e}")
+                # If crypto fails, we just don't add its balance, but keep going
+        
         drawdown = self._calculate_drawdown(equity)
         self.storage.save_equity(equity, drawdown)
         return equity, drawdown
 
     def _sync_closed_trades_forex(self) -> None:
+        if not self.forex: return
         deals = self.forex.history_deals()
         if deals is None:
             return
@@ -930,24 +1025,28 @@ class TradingEngine:
                     ping_success()
 
     def _sync_closed_trades_crypto(self) -> None:
+        if not self.bybit: return
         for trade_id, trade in list(self.open_trades.items()):
             if trade.market != "CRYPTO":
                 continue
-            closed = self.bybit.get_closed_pnl(trade.symbol, limit=100)
-            for c in closed:
-                if c.get("orderId") == trade_id or c.get("execId") == trade_id:
-                    pnl = float(c.get("closedPnl", 0))
-                    self.storage.update_trade(trade_id, status="CLOSED", pnl=pnl, close_time=str(c.get("createdTime")))
-                    self.open_trades.pop(trade_id, None)
-                    self.alerts.send("INFO", f"Trade closed: {trade.symbol} pnl={pnl}")
-                    if pnl > 0:
-                        ping_success()
-                    break
+            try:
+                closed = self.bybit.get_closed_pnl(trade.symbol, limit=100)
+                for c in closed:
+                    if c.get("orderId") == trade_id or c.get("execId") == trade_id:
+                        pnl = float(c.get("closedPnl", 0))
+                        self.storage.update_trade(trade_id, status="CLOSED", pnl=pnl, close_time=str(c.get("createdTime")))
+                        self.open_trades.pop(trade_id, None)
+                        self.alerts.send("INFO", f"Trade closed: {trade.symbol} pnl={pnl}")
+                        if pnl > 0:
+                            ping_success()
+                        break
+            except Exception:
+                continue
 
     def manage_open_trades(self) -> None:
         for trade_id, trade in list(self.open_trades.items()):
             try:
-                if trade.market == "FOREX":
+                if trade.market == "FOREX" and self.forex:
                     positions = mt5.positions_get(ticket=int(trade_id))
                     if not positions:
                         continue
@@ -976,7 +1075,7 @@ class TradingEngine:
                                 self.forex.close_partial(trade.symbol, pos.ticket, trade.qty * CONFIG["trade_management"]["partial_close_pct"])
                                 self.storage.update_trade(trade_id, partial_taken=1)
 
-                if trade.market == "CRYPTO":
+                if trade.market == "CRYPTO" and self.bybit:
                     df = self.bybit.get_kline(trade.symbol, CONFIG["crypto"]["timeframe"], 200)
                     atr_series = Indicators.atr(df, CONFIG["indicators"]["atr_period"])
                     atr = atr_series.iloc[-1]
@@ -1009,10 +1108,14 @@ class TradingEngine:
                 self.alerts.send("ERROR", f"Trade management error: {exc}")
 
     def scan_and_trade_forex(self, equity: float) -> None:
-        if not CONFIG["forex"]["enabled"]:
+        if not CONFIG["forex"]["enabled"] or not self.forex:
             return
         for symbol in CONFIG["forex"]["symbols"]:
             try:
+                # Check if we already have an open trade for this symbol
+                if any(t.symbol == symbol for t in self.open_trades.values()):
+                    continue
+
                 if not self._should_trade(symbol, "FOREX"):
                     continue
                 if not self.forex.spread_ok(symbol):
@@ -1054,7 +1157,7 @@ class TradingEngine:
                     entry_price=price,
                     stop_price=sl,
                     take_profit=tp,
-                    open_time=datetime.utcnow().isoformat()
+                    open_time=datetime.now(timezone.utc).isoformat()
                 )
                 self.open_trades[trade_id] = trade
                 self.storage.save_trade(trade)
@@ -1064,7 +1167,7 @@ class TradingEngine:
                 self.alerts.send("ERROR", f"Prop Firm Machine: Forex scan error {symbol}: {exc}")
 
     def scan_and_trade_crypto(self, equity: float) -> None:
-        if not CONFIG["crypto"]["enabled"]:
+        if not CONFIG["crypto"]["enabled"] or not self.bybit:
             return
         for symbol in CONFIG["crypto"]["symbols"]:
             try:
@@ -1104,7 +1207,7 @@ class TradingEngine:
                     entry_price=entry,
                     stop_price=sl,
                     take_profit=tp,
-                    open_time=datetime.utcnow().isoformat()
+                    open_time=datetime.now(timezone.utc).isoformat()
                 )
                 self.open_trades[trade_id] = trade
                 self.storage.save_trade(trade)
@@ -1248,12 +1351,27 @@ refresh(); setInterval(refresh, 5000);
             })
 
 
+class SafeStreamHandler(logging.StreamHandler):
+    def emit(self, record):
+        try:
+            # Replace problematic arrow character with a plain ASCII version
+            if isinstance(record.msg, str):
+                record.msg = record.msg.replace("\u2192", "->")
+            super().emit(record)
+        except Exception:
+            self.handleError(record)
+
 def main() -> None:
     log_path = os.path.join(os.getcwd(), "run.log")
+    
+    # Configure handlers with explicit UTF-8 encoding for file
+    file_handler = logging.FileHandler(log_path, encoding='utf-8')
+    stream_handler = SafeStreamHandler(sys.stdout)
+    
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s",
-        handlers=[logging.FileHandler(log_path), logging.StreamHandler(sys.stdout)],
+        handlers=[file_handler, stream_handler],
         force=True
     )
     print("Starting engine", flush=True)

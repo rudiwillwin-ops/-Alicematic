@@ -1,243 +1,58 @@
-You are a professional MQL5 developer.
-
-Create a COMPLETE MetaTrader 5 Expert Advisor named:
-
-ForexMoneyMachineEA.mq5
-
-The EA must compile in MetaEditor with ZERO errors and ZERO warnings.
-
-The EA must be a standalone robot with a control panel and a START/STOP button and must include ALL functionality described below.
-
---------------------------------------------------
-GENERAL REQUIREMENTS
---------------------------------------------------
-
-Platform: MetaTrader 5
-Language: MQL5
-Use: #property strict
-Use library: <Trade/Trade.mqh>
-
-Create modular, clean, well-commented code.
-
-The EA must work on BOTH:
-- Demo accounts
-- Live accounts
-
---------------------------------------------------
-ON-CHART CONTROL PANEL
---------------------------------------------------
-
-Create a visible trading control panel on the chart using chart objects.
-
-The panel must contain:
-
-1. START button
-2. STOP button
-3. Status label showing:
-   BOT RUNNING
-   BOT STOPPED
-
-4. Account balance display
-5. Current lot size display
-6. Total open trades display
-
-Use:
-
-CChartObjectButton
-CChartObjectLabel
-
-Use OnChartEvent() to detect button clicks.
-
-When START is pressed:
-botRunning = true
-
-When STOP is pressed:
-botRunning = false
-
-The trading logic must only run when botRunning == true.
-
---------------------------------------------------
-MULTI-PAIR TRADING
---------------------------------------------------
-
-The EA must trade multiple currency pairs simultaneously.
-
-Use the array:
-
-string Symbols[] =
-{
-"EURUSD",
-"GBPUSD",
-"USDJPY",
-"AUDUSD",
-"USDCHF"
-};
-
-The EA must loop through these symbols and check for trade opportunities.
-
---------------------------------------------------
-TRADING STRATEGY
---------------------------------------------------
-
-Use a simple trend-following strategy.
-
-Indicators:
-
-Fast Moving Average = 10 SMA
-Slow Moving Average = 50 SMA
-
-Timeframe = H1
-
-Trading logic:
-
-If FastMA > SlowMA
-OPEN BUY
-
-If FastMA < SlowMA
-OPEN SELL
-
-Maximum trades per pair = 2
-
---------------------------------------------------
-RISK MANAGEMENT
---------------------------------------------------
-
-Inputs:
-
-input double RiskPercent = 2.0;
-input int MaxTradesPerPair = 2;
-
-Dynamic lot size calculation:
-
-lotSize =
-(AccountBalance * RiskPercent / 100) / 1000
-
-Minimum lot size = 0.01
-
---------------------------------------------------
-STOP LOSS AND TAKE PROFIT
---------------------------------------------------
-
-Stop Loss = 1.5%
-
-Take Profit = 1.5%
-
-Both must be automatically calculated using current price.
-
---------------------------------------------------
-SMART COMPOUNDING
---------------------------------------------------
-
-Lot size must automatically increase when account balance increases.
-
-Lot size must decrease when account balance drops.
-
-This must allow small accounts like $50 to scale gradually.
-
---------------------------------------------------
-TRADE MANAGEMENT FUNCTIONS
---------------------------------------------------
-
-Create the following functions:
-
-double CalculateLotSize()
-int CountOpenTrades(string symbol)
-void OpenBuy(string symbol)
-void OpenSell(string symbol)
-
-Use CTrade.Buy()
-Use CTrade.Sell()
-
---------------------------------------------------
-SAFETY FEATURES
---------------------------------------------------
-
-Include the following protections:
-
-* Spread filter
-* Prevent duplicate trades
-* Check if symbol exists
-* Prevent over-trading
-* Log messages to Experts tab
-
---------------------------------------------------
-TELEGRAM INTEGRATION
---------------------------------------------------
-
-Include Telegram alert support using WebRequest.
-
-Inputs:
-
-input string BotToken
-input long ChatID
-
-Create function:
-
-void SendTelegram(string message)
-
-Messages must be sent when:
-
-EA starts
-EA stops
-BUY trade opens
-SELL trade opens
-
-Example message:
-
-"BUY trade opened on EURUSD at 1.10500"
-
---------------------------------------------------
-TELEGRAM AUTO-REPLY SYSTEM
---------------------------------------------------
-
-Use EventSetTimer(60)
-
-Every 60 seconds check Telegram updates using:
-
-https://api.telegram.org/bot<TOKEN>/getUpdates
-
-If a user sends:
-
-/start
-or
-Hello
-
-Reply automatically with:
-
-"Bot is running trades now 🤖"
-
---------------------------------------------------
-WEBREQUEST PERMISSION
---------------------------------------------------
-
-Include comments telling the user to enable:
-
-Tools → Options → Expert Advisors → Allow WebRequest
-
-Add URL:
-
-https://api.telegram.org
-
---------------------------------------------------
-REQUIRED EVENT FUNCTIONS
---------------------------------------------------
-
-Implement:
-
-OnInit()
-OnDeinit()
-OnTick()
-OnTimer()
-OnChartEvent()
-
---------------------------------------------------
-FINAL OUTPUT
---------------------------------------------------
-
-Output the COMPLETE ForexMoneyMachineEA.mq5 source code.
-
-Do NOT summarize.
-
-Do NOT explain.
-
-Return ONLY the full code ready to compile.
+Create a lightweight MetaTrader 5 Expert Advisor (MQL5).
+
+BOT NAME:
+NeutralGridLite
+
+CORE LOGIC:
+The bot trades a neutral grid strategy.
+
+FEATURES:
+- Start/Stop button on chart
+- Places Buy Stop above current price
+- Places Sell Stop below current price
+- Grid distance configurable in pips
+- Maximum grid levels configurable
+- Fixed lot size input
+- Basket profit target (close all trades)
+- Equity drawdown protection
+- Magic number system
+
+INPUT PARAMETERS:
+
+LotSize = 0.01
+GridDistance = 20
+MaxGridLevels = 5
+BasketProfitUSD = 5
+MaxDrawdownPercent = 20
+MagicNumber = 55555
+
+LOGIC:
+
+1. When Start button pressed
+   - Record current price
+   - Place Buy Stop above price
+   - Place Sell Stop below price
+
+2. When price moves GridDistance
+   - Add new grid order in that direction
+
+3. Track total open trade profit.
+
+4. If profit >= BasketProfitUSD
+   - Close all positions
+   - Reset grid
+
+5. If equity drawdown >= MaxDrawdownPercent
+   - Close all trades
+   - Stop trading
+
+UI:
+Display on chart:
+- Bot Status
+- Current Profit
+- Grid Level
+- Equity Drawdown
+
+The EA must compile with no errors and be optimized for low CPU usage.
+
+Use OnTick event only
