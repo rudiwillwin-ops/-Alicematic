@@ -140,8 +140,16 @@ async def execute_samantha_trade(token, account_id, symbol, direction, risk_pct)
 # --- SIDEBAR: SETTINGS ---
 st.sidebar.title("Samantha Cloud Control")
 
-meta_token = st.sidebar.text_input("MetaApi Token", type="password")
-meta_account_id = st.sidebar.text_input("MetaApi Account ID")
+# Auto-filling credentials from secrets if available
+try:
+    default_token = st.secrets.get("META_TOKEN", "0357f707f15e8b4e76a6e5b4f4f4e5b4")
+    default_account = st.secrets.get("META_ACCOUNT_ID", "309567916")
+except:
+    default_token = ""
+    default_account = ""
+
+meta_token = st.sidebar.text_input("MetaApi Token", value=default_token, type="password")
+meta_account_id = st.sidebar.text_input("MetaApi Account ID", value=default_account)
 
 with st.sidebar.expander("⚙️ STRATEGY SETTINGS", expanded=True):
     risk_pct = st.sidebar.slider("Risk Per Trade (%)", 0.1, 5.0, 1.0)
