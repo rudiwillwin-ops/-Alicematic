@@ -7,6 +7,7 @@ from tradingview_ta import TA_Handler, Interval
 from metaapi_cloud_sdk import MetaApi
 
 # --- CONFIGURATION & THEME ---
+# Alicematic Cloud Pro v1.1 - Heartbeat Trigger
 st.set_page_config(page_title="Alicematic Cloud Pro", page_icon="💃", layout="wide")
 
 # --- CUSTOM CSS ---
